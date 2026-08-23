@@ -1,0 +1,47 @@
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# Environment variables
+.env
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# IDE / editor
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Windows
+desktop.ini
+
+
+
+# Logs
+*.log
+
+# Data files (optional — uncomment if you don't want to track datasets)
+# *.csv
+# *.xlsx
+
+# Model files (optional — uncomment if you don't want to track large trained models)
+# *.pkl
+# *.h5
+# *.pt
