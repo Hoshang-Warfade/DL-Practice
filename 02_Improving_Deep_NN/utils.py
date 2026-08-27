@@ -18,7 +18,7 @@ def initialize_parameters(layer_dims):
     parameters ={}
     np.random.seed(3)
     for l in range(1,L):
-        parameters["W"+ str(l)] = np.random.randn(layer_dims[l],layer_dims[l-1])* np.sqrt(2/layer_dims[l-1])
+        parameters['W' + str(l)] = np.random.randn(layer_dims[l], layer_dims[l-1]) / np.sqrt(layer_dims[l-1])
         parameters["b"+ str(l)] = np.zeros((layer_dims[l],1))
 
     return parameters
@@ -172,8 +172,37 @@ def compute_cost (AL, Y):
 
     return cost
 
+def compute_cost_regularized (AL, Y,parameters,lambd):
+    """
+    Implement the cost function defined by equation (7).
+
+    Arguments:
+    AL -- probability vector corresponding to your label predictions, shape (1, number of examples)
+    Y -- true "label" vector (for example: containing 0 if non-cat, 1 if cat), shape (1, number of examples)
+
+    Returns:
+    cost -- binary-cross-entropy cost
+    """
+
+    m = Y.shape[1]
+    logprobs = np.multiply(-np.log(AL), Y) + np.multiply(-np.log(1 - AL), 1 - Y)
+    cost = 1./m * np.nansum(logprobs)
+
+    L = len(parameters)//2
+
+    reg_cost = 0;
+
+    for l in range(1,L+1):
+        reg_cost += np.sum(np.square(parameters['W'+str(l)]))
+
+    reg_cost = (lambd/(2*m))*reg_cost
+
+    cost += reg_cost
+
+    return cost
+
        
-def linear_backward(dZ, cache):
+def linear_backward(dZ, cache,lambd):
     """
     Implement the linear portion of backward propagation for a single layer (layer l)
 
@@ -193,6 +222,9 @@ def linear_backward(dZ, cache):
 
 
     dW = (1/m)*np.dot(dZ,A_prev.T)
+    if(lambd>0):
+        dW += (lambd/m)*W
+        
     db = (1/m)*np.sum(dZ,axis=1,keepdims=True)
 
     dA_prev =np.dot(W.T,dZ)
@@ -238,7 +270,7 @@ def relu_backward(dA, cache):
 
     return dZ
 
-def linear_activation_backward(dA, cache, activation):
+def linear_activation_backward(dA, cache, activation,lambd):
     """
     Implement the backward propagation for the LINEAR->ACTIVATION layer.
     
@@ -261,14 +293,14 @@ def linear_activation_backward(dA, cache, activation):
         dZ = sigmoid_backward(dA, activation_cache)
 
 
-    dA_prev, dW, db = linear_backward(dZ, linear_cache)
+    dA_prev, dW, db = linear_backward(dZ, linear_cache,lambd)
 
 
     return dA_prev, dW, db
 
 
 
-def L_model_backward(AL, Y, caches):
+def L_model_backward(AL, Y, caches,lambd = 0):
     """
     Implement the backward propagation for the [LINEAR->RELU] * (L-1) -> LINEAR -> SIGMOID group
     
@@ -299,7 +331,7 @@ def L_model_backward(AL, Y, caches):
     linear_cache, activation_cache = current_cache
         
     dA_prev_temp, dW_temp, db_temp = linear_backward(
-            dZL, linear_cache
+            dZL, linear_cache,lambd
     )    
     grads["dA"+str(L-1)] = dA_prev_temp
     grads["dW"+str(L)] = dW_temp
@@ -311,7 +343,7 @@ def L_model_backward(AL, Y, caches):
     for l in reversed(range(L-1)):
         # lth layer: (RELU -> LINEAR) gradients.
         current_cache = caches[l]
-        dA_prev_temp, dW_temp, db_temp = linear_activation_backward(grads["dA"+str(l+1)], current_cache, activation='relu')
+        dA_prev_temp, dW_temp, db_temp = linear_activation_backward(grads["dA"+str(l+1)], current_cache, activation='relu',lambd=lambd)
         grads["dA"+str(l)] = dA_prev_temp
         grads["dW"+str(l+1)] = dW_temp
         grads["db"+str(l+1)] =db_temp
