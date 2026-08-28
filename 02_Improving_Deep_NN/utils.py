@@ -110,13 +110,16 @@ def linear_activation_forward(A_prev,W,b,activation):
 
         
 
-def L_model_forward(X , parameters):
+def L_model_forward(X , parameters,keep_probs=None):
     """
     Implement forward propagation for the [LINEAR->RELU]*(L-1)->LINEAR->SIGMOID computation
     
     Arguments:
     X -- data, numpy array of shape (input size, number of examples)
     parameters -- output of initialize_parameters_deep()
+    keep_probs -- python list of keep_prob values, one per layer (e.g. [1.0, 0.7, 0.8, 1.0])
+                  keep_probs[l] corresponds to the dropout applied AFTER layer l's activation
+                  Use 1.0 for a layer where you don't want dropout (e.g. often the input/output layers)
     
     Returns:
     AL -- activation value from the output (last) layer
@@ -129,6 +132,8 @@ def L_model_forward(X , parameters):
     A = X
     L = len(parameters)//2
 
+    if keep_probs is None:
+        keep_probs = [1.0] * (L - 1)
 
     #Hidden Layers 1 to L-1(Relu)
     for l in range(1,L):
@@ -138,6 +143,16 @@ def L_model_forward(X , parameters):
         b = parameters['b'+str(l)]
         activation = 'relu'
         A, cache = linear_activation_forward(A_prev ,W ,b ,activation)
+
+        keep_prob = keep_probs[l-1]
+        if(keep_prob<1.0):
+            D = np.random.rand(A.shape[0],A.shape[1])
+            D = (D<keep_prob).astype(int)
+            A = A*D
+            A = A/keep_prob
+        else : D = None
+            
+        cache  = cache + (D,keep_prob)
         caches.append(cache)
 
 
@@ -147,7 +162,6 @@ def L_model_forward(X , parameters):
     activation = 'sigmoid'
     AL ,cache = linear_activation_forward(A, W, b, activation)
     caches.append(cache)
-
 
 
     return AL, caches
@@ -332,7 +346,9 @@ def L_model_backward(AL, Y, caches,lambd = 0):
         
     dA_prev_temp, dW_temp, db_temp = linear_backward(
             dZL, linear_cache,lambd
-    )    
+    )
+
+        
     grads["dA"+str(L-1)] = dA_prev_temp
     grads["dW"+str(L)] = dW_temp
     grads["db"+str(L)] =db_temp
@@ -343,7 +359,16 @@ def L_model_backward(AL, Y, caches,lambd = 0):
     for l in reversed(range(L-1)):
         # lth layer: (RELU -> LINEAR) gradients.
         current_cache = caches[l]
-        dA_prev_temp, dW_temp, db_temp = linear_activation_backward(grads["dA"+str(l+1)], current_cache, activation='relu',lambd=lambd)
+        linear_cache, activation_cache, D, keep_prob = current_cache
+        
+        dA = grads["dA"+str(l+1)]
+        if keep_prob < 1.0:
+            dA = dA*D
+            dA = dA/keep_prob
+            
+        grads["dA"+str(l+1)] = dA
+        
+        dA_prev_temp, dW_temp, db_temp = linear_activation_backward(dA, (linear_cache,activation_cache), activation='relu',lambd=lambd)
         grads["dA"+str(l)] = dA_prev_temp
         grads["dW"+str(l+1)] = dW_temp
         grads["db"+str(l+1)] =db_temp
