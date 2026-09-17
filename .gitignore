@@ -32,8 +32,6 @@ Thumbs.db
 # Windows
 desktop.ini
 
-
-
 # Logs
 *.log
 
@@ -41,7 +39,25 @@ desktop.ini
 # *.csv
 # *.xlsx
 
-# Model files (optional — uncomment if you don't want to track large trained models)
-# *.pkl
-# *.h5
-# *.pt
+# --- Project-specific: YOLO model weights ---
+# These are large (100MB+) and should be downloaded separately, not committed.
+model_data/
+*.h5
+*.keras
+*.pb
+saved_model.pb
+variables/
+checkpoints/
+*.ckpt
+
+# --- Project-specific: generated prediction outputs ---
+out/
+
+# --- Project-specific: input/output images ---
+# Uncomment if you don't want to track sample/test images either.
+# images/*.jpg
+# images/*.png
+
+# Keep the font used for drawing bounding box labels
+!font/*.otf
+!font/*.ttf
